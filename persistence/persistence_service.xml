@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <dds>
   <qos_library name="PSQos">
     <qos_profile name="PSDefault">
@@ -23,6 +23,7 @@
 
     <participant name="PSParticipant">
       <domain_id>0</domain_id>
+
       <persistence_group name="ChatMsgs" filter="message">
         <datareader_qos base_name="PSQos::PSDefault"/>
         <datawriter_qos base_name="PSQos::PSDefault"/>
