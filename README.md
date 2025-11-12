@@ -1,11 +1,11 @@
-# 🗨️ DDS Chat Application
+# DDS Chat Application
 
 A simple yet powerful **chat application** built with **RTI Connext DDS** and **Tkinter**.  
 It supports **real-time messaging**, **user presence tracking**, and **persistent message history**, all powered by DDS topics and QoS configurations.
 
 ---
 
-## 🚀 Overview
+## Overview
 
 This project demonstrates how to build a **distributed chat system** using **Data Distribution Service (DDS)**.  
 Each chat client acts as a DDS participant that can publish and subscribe to user and message topics.
@@ -16,7 +16,7 @@ Persistence is enabled so messages remain available even if no one is connected 
 
 ---
 
-## ✨ Features
+## Features
 
 - **User Presence Tracking**  
   See users join or leave dynamically across participants.
@@ -38,13 +38,13 @@ Persistence is enabled so messages remain available even if no one is connected 
 
 ---
 
-## 🧩 Architecture
+## Architecture
 
 ![alt text](image-1.png)
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── chat.idl                       # Data definitions for
@@ -60,7 +60,7 @@ Persistence is enabled so messages remain available even if no one is connected 
 
 ---
 
-## 🧰 Prerequisites & Installation
+## Prerequisites & Installation
 
 1. Install **RTI Connext DDS** (with the **Persistence Service** component).
 2. Ensure the Python API is available:
@@ -74,7 +74,7 @@ Persistence is enabled so messages remain available even if no one is connected 
 
 ---
 
-## ▶️ Running the Chat
+## Running the Chat
 
 ### 1) Start the RTI Persistence Service (separate terminal)
 
@@ -118,6 +118,6 @@ Run two or more instances to simulate different users.
 1. Start the Persistence Service.
 2. Run two chat windows, send messages.
 3. leave a chat windows.
-4. rejoin the chat — previous messages will automatically reappear.
+4. rejoin the chat; previous messages will automatically reappear.
 
 ---
