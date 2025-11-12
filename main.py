@@ -72,9 +72,16 @@ class MainApp:
             self.gui.user_left(user.username)
 
     def received(self, message_samples):
-        messages = [[s.fromUser, s.toUser, s.message] for s in message_samples]
-        for msg in messages: self.gui.message_received(*msg)
-
+        # prefer toUser; if empty use toGroup for display
+        messages = [[
+            s.fromUser,
+            (s.toUser if s.toUser else s.toGroup),
+            s.message,
+            getattr(s, "timestamp_ms", None)
+        ] for s in message_samples]
+        for msg in messages:
+            self.gui.message_received(*msg)
+            
 def main():
     return MainApp()
 

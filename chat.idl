@@ -13,4 +13,6 @@ struct ChatMessage {
   @key string<MAX_NAME_SIZE> toUser;
   @key string<MAX_NAME_SIZE> toGroup;
   string<MAX_MSG_SIZE>       message;
+  long long                  timestamp_ms;   
 };
+

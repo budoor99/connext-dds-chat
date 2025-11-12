@@ -1,6 +1,7 @@
 import os
 import threading
 import logging
+import time
 from typing import Callable, List, Optional, Iterable
 import rti.connextdds as dds
 from chat import ChatUser, ChatMessage  # generated from chat.idl
@@ -111,7 +112,8 @@ class DDSApp:
         self.message.toUser = destination
         self.message.toGroup = destination
         self.message.message = message
-        self.writer_msg.write(self.message)
+        self.message.timestamp_ms = int(time.time() * 1000) 
+        self.writer_msg.write(self.message)   
 
     def user_leave(self):
         if self.participant.closed:
@@ -197,4 +199,6 @@ class DDSApp:
                     samples = self.reader_msg.take()  # returns samples (data + info)
                     data = [s.data for s in samples if s.info.valid]
                     if data:
+                        for msg in data:
+                            msg.timestamp_sec = int(time.time())
                         self.handlers.message_received(data)

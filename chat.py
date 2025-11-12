@@ -43,8 +43,8 @@ class ChatUser:
 
     member_annotations = {
         'fromUser': [idl.key, idl.bound(MAX_NAME_SIZE),],
-        'toUser': [idl.bound(MAX_NAME_SIZE),],
-        'toGroup': [idl.bound(MAX_NAME_SIZE),],
+        'toUser': [idl.key, idl.bound(MAX_NAME_SIZE),],
+        'toGroup': [idl.key, idl.bound(MAX_NAME_SIZE),],
         'message': [idl.bound(MAX_MSG_SIZE),],
     }
 )
@@ -53,3 +53,4 @@ class ChatMessage:
     toUser: str = ""
     toGroup: str = ""
     message: str = ""
+    timestamp_ms: int = 0

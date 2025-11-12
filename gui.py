@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, font, messagebox
 import logging
 from typing import Callable, Optional, List
+from datetime import datetime
 
 class Handlers:
     join:          Callable[[str, str, Optional[str], Optional[str]], None] = lambda *_: logging.warning("Not implemented")
@@ -11,6 +12,13 @@ class Handlers:
     list_users:    Callable[[], List[str]] = lambda *_: logging.warning("Not implemented")
     send_message:  Callable[[str, str], None] = lambda *_: logging.warning("Not implemented")
     search_history:Callable[[str], None] = lambda *_: logging.warning("Not implemented")
+
+def _now_hms(): return datetime.now().strftime('%H:%M:%S')
+def _fmt_ts(ms):
+        try:
+            return datetime.fromtimestamp(ms/1000.0).strftime('%H:%M:%S')
+        except Exception:
+            return None
 
 class GuiApp:
     def __init__(self, handlers=Handlers()):
@@ -31,16 +39,18 @@ class GuiApp:
         if not self.widgets.online_users_tree.add_user(user, group, name, last_name): return
         space = " " if (name and last_name) else ""
         fullname = f" ({name}{space}{last_name})" if (name or last_name) else ""
-        self.widgets.message_text.append_line(f"> {user}{fullname} joined on group {group}.")
+        self.widgets.message_text.append_line(f"[{_now_hms()}] > {user}{fullname} joined on group {group}.")
 
     def user_left(self, user):
         if not self.state_joined: return
         if not self.widgets.online_users_tree.delete_user(user): return
-        self.widgets.message_text.append_line(f"> {user} dropped.")
+        self.widgets.message_text.append_line(f"[{_now_hms()}] > {user} dropped.")
 
-    def message_received(self, user, destination, message):
+    def message_received(self, user, destination, message, timestamp_ms=None):
         dest_str = "you" if destination == self.widgets.user_entry.get() else destination
-        self.widgets.message_text.append_line(f"{user} (to {dest_str}): {message}")
+        ts = _fmt_ts(timestamp_ms) if timestamp_ms else None
+        prefix = f"[{ts}] " if ts else ""
+        self.widgets.message_text.append_line(f"{prefix}{user} (to {dest_str}): {message}")
 
     def history_results(self, items):
         if not items:
@@ -127,6 +137,7 @@ class GuiApp:
     def _search_history(self):
         term = self.widgets.search_entry.get().strip()
         self.handlers.search_history(term)
+
 
 class _GuiWidgets:
     def __init__(self, app: GuiApp):
@@ -321,3 +332,5 @@ class _GuiWidgets:
     def _bind_enter(self):
         for entry in self.entry_widgets.values():
             entry.bind('<Return>', lambda event: self.join_button.invoke())
+
+
