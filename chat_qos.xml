@@ -5,7 +5,7 @@
 
   <qos_library name="Chat_Library">
 
-    <!-- Participant / transport -->
+    <!-- Participant: name + UDP transport -->
     <qos_profile name="Chat_Profile">
       <participant_qos>
         <participant_name><name>ChatApp</name></participant_name>
@@ -13,7 +13,7 @@
       </participant_qos>
     </qos_profile>
 
-    <!-- Users: keep your original (volatile) behavior -->
+    <!-- User presence: volatile, short liveliness lease -->
     <qos_profile name="ChatUser_Profile" base_name="BuiltinQosLibExp::Pattern.Status">
       <datareader_qos>
         <subscription_name><name>ChatUser_Reader</name></subscription_name>
@@ -25,7 +25,7 @@
       </datawriter_qos>
     </qos_profile>
 
-    <!-- MESSAGES: persistent + reliable + keep-all -->
+    <!-- Messages: reliable, persistent, keep-all -->
     <qos_profile name="ChatMessage_Persistent_Profile">
       <datawriter_qos>
         <publication_name><name>ChatMessage_Writer_Persistent</name></publication_name>

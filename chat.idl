@@ -1,5 +1,5 @@
-﻿const long MAX_NAME_SIZE = 128;
-const long MAX_MSG_SIZE  = 512;
+﻿const long MAX_NAME_SIZE = 128;  // Max characters for usernames and group names
+const long MAX_MSG_SIZE  = 512;  // Max message text size
 
 struct ChatUser {
   @key string<MAX_NAME_SIZE> username;
@@ -9,10 +9,10 @@ struct ChatUser {
 };
 
 struct ChatMessage {
-  @key string<MAX_NAME_SIZE> fromUser;
-  @key string<MAX_NAME_SIZE> toUser;
-  @key string<MAX_NAME_SIZE> toGroup;
+  string<MAX_NAME_SIZE>      fromUser;
+  string<MAX_NAME_SIZE>      toUser;
+  string<MAX_NAME_SIZE>      toGroup;
   string<MAX_MSG_SIZE>       message;
-  long long                  timestamp_ms;   
+  long long                  timestamp_ms;  // Time sent
 };
 

@@ -42,9 +42,9 @@ class ChatUser:
     type_annotations = [idl.xtypes_compliance(0x0000018C), ],
 
     member_annotations = {
-        'fromUser': [idl.key, idl.bound(MAX_NAME_SIZE),],
-        'toUser': [idl.key, idl.bound(MAX_NAME_SIZE),],
-        'toGroup': [idl.key, idl.bound(MAX_NAME_SIZE),],
+        'fromUser': [idl.bound(MAX_NAME_SIZE),],
+        'toUser': [idl.bound(MAX_NAME_SIZE),],
+        'toGroup': [idl.bound(MAX_NAME_SIZE),],
         'message': [idl.bound(MAX_MSG_SIZE),],
     }
 )

@@ -1,10 +1,10 @@
-# gui.py
 import tkinter as tk
 from tkinter import ttk, font, messagebox
 import logging
 from typing import Callable, Optional, List
 from datetime import datetime
 
+# ===== Handlers interface =====
 class Handlers:
     join:          Callable[[str, str, Optional[str], Optional[str]], None] = lambda *_: logging.warning("Not implemented")
     update_user:   Callable[[str], None] = lambda *_: logging.warning("Not implemented")
@@ -13,6 +13,7 @@ class Handlers:
     send_message:  Callable[[str, str], None] = lambda *_: logging.warning("Not implemented")
     search_history:Callable[[str], None] = lambda *_: logging.warning("Not implemented")
 
+# ===== Helpers for timestamp formatting =====
 def _now_hms(): return datetime.now().strftime('%H:%M:%S')
 def _fmt_ts(ms):
         try:
@@ -20,20 +21,21 @@ def _fmt_ts(ms):
         except Exception:
             return None
 
+# ===== GUI Application =====
 class GuiApp:
     def __init__(self, handlers=Handlers()):
         self.root = tk.Tk()
         self.root.title("Chat App")
         self.root.protocol("WM_DELETE_WINDOW", self._close)
 
-        self.state_joined = False
-        self.handlers = handlers
+        self.state_joined = False  # Track if user is connected
+        self.handlers = handlers  # Link to backend functions
         self.widgets = _GuiWidgets(self)
 
     def start(self):
         self.root.mainloop()
 
-    # Called by app:
+    # Called by backend when user events occur
     def user_joined(self, user, group, name="", last_name=""):
         if not self.state_joined: return
         if not self.widgets.online_users_tree.add_user(user, group, name, last_name): return
@@ -46,12 +48,14 @@ class GuiApp:
         if not self.widgets.online_users_tree.delete_user(user): return
         self.widgets.message_text.append_line(f"[{_now_hms()}] > {user} dropped.")
 
+    # Display incoming message with timestamp
     def message_received(self, user, destination, message, timestamp_ms=None):
         dest_str = "you" if destination == self.widgets.user_entry.get() else destination
         ts = _fmt_ts(timestamp_ms) if timestamp_ms else None
         prefix = f"[{ts}] " if ts else ""
         self.widgets.message_text.append_line(f"{prefix}{user} (to {dest_str}): {message}")
 
+    # Display results of message search
     def history_results(self, items):
         if not items:
             self.widgets.message_text.append_line("> No matches.")
@@ -59,9 +63,12 @@ class GuiApp:
         self.widgets.message_text.append_line(f"> Found {len(items)} message(s):")
         for s in items:
             dest = s.toUser if s.toUser else s.toGroup
-            self.widgets.message_text.append_line(f"{s.fromUser} (to {dest}): {s.message}")
+            ts = _fmt_ts(getattr(s, "timestamp_ms", None))
+            prefix = f"[{ts}] " if ts else ""
+            self.widgets.message_text.append_line(f"{prefix}{s.fromUser} (to {dest}): {s.message}")
 
-    # Private UI actions
+    # ===== Private UI actions =====
+
     def _close(self):
         if self.state_joined:
             self._leave()
@@ -80,10 +87,11 @@ class GuiApp:
         kwargs = {ename: entry.get() for ename, entry in self.widgets.entry_widgets.items()}
         self.handlers.join(*kwargs.values())
 
+        # Lock join fields after joining
         for entry in self.widgets.entry_widgets.values():
             entry.config(state="readonly")
 
-        # Enable runtime widgets
+        # Enable chat-related widgets
         self.widgets.group_entry.config(state=tk.NORMAL)
         enable = [self.widgets.update_button, self.widgets.message_input, self.widgets.send_button,
                   self.widgets.online_users_button_refresh, self.widgets.online_users_button_collapse,
@@ -92,18 +100,21 @@ class GuiApp:
 
         self.widgets.join_button.config(text="Leave", command=self._leave)
 
+    # Disconnect from chat and reset UI
     def _leave(self):
         self.state_joined = False
         self.handlers.leave()
 
+        # Unlock input fields
         for entry in self.widgets.entry_widgets.values():
             entry.config(state=tk.NORMAL)
 
+        # Clear user list and chat text
         for item in self.widgets.online_users_tree.get_children():
             self.widgets.online_users_tree.delete(item)
-
         self.widgets.message_text.clear()
 
+        # Disable runtime widgets
         disable = [self.widgets.update_button, self.widgets.message_input, self.widgets.send_button,
                    self.widgets.online_users_button_refresh, self.widgets.online_users_button_collapse,
                    self.widgets.search_button]
@@ -115,6 +126,7 @@ class GuiApp:
         if not self.state_joined: return
         self.handlers.update_user(self.widgets.group_entry.get())
 
+    # Refresh online user list
     def _list_users(self):
         users = self.handlers.list_users()
         for item in self.widgets.online_users_tree.get_children():
@@ -125,20 +137,26 @@ class GuiApp:
             last = entry[3] if len(entry) > 3 else ""
             self.widgets.online_users_tree.add_user(user, group, name, last)
 
+    # Send a message to selected user or current group
     def _send_message(self):
         selected = self.widgets.online_users_tree.selection()
         selected_user = selected[0] if selected else ""
         group = self.widgets.group_entry.get()
         destination = selected_user if selected_user else group
-        message = self.widgets.message_input.get()
+        message = self.widgets.message_input.get().strip()
+        
+        if not message:
+            return
+
         self.handlers.send_message(destination, message)
         self.widgets.message_input.delete(0, tk.END)
 
+    # Request backend to search persisted messages
     def _search_history(self):
         term = self.widgets.search_entry.get().strip()
         self.handlers.search_history(term)
 
-
+# ===== Internal UI layout builder =====
 class _GuiWidgets:
     def __init__(self, app: GuiApp):
         self.app = app
@@ -153,6 +171,7 @@ class _GuiWidgets:
         self.top_frame = ttk.Frame(self.root)
         self.top_frame.pack(fill=tk.X, padx=10, pady=5, anchor=tk.NW)
 
+        # Input fields for user inf
         self.user_label = ttk.Label(self.top_frame, text="User:")
         self.user_label.grid(row=0, column=0, padx=5, pady=5, sticky=tk.W)
         self.user_entry = ttk.Entry(self.top_frame)
@@ -173,6 +192,7 @@ class _GuiWidgets:
         self.last_name_entry = ttk.Entry(self.top_frame)
         self.last_name_entry.grid(row=1, column=3, padx=5, pady=5, sticky=tk.W+tk.E)
 
+        # Join and Update buttons
         self.join_button = ttk.Button(self.top_frame, text="Join", command=self.app._join)
         self.join_button.grid(row=0, column=4, padx=5, pady=5)
 
@@ -190,7 +210,7 @@ class _GuiWidgets:
             "last_name": self.last_name_entry
         }
 
-        # Bottom area
+        # Bottom section
         self.bottom_frame = ttk.Frame(self.root)
         self.bottom_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5, anchor=tk.NW)
         self.bottom_frame.columnconfigure(0, weight=1)
@@ -202,6 +222,8 @@ class _GuiWidgets:
         self.message_board_label = ttk.Label(self.message_board_frame, text="Message Board:")
         self.message_board_label.pack(anchor=tk.W)
         self.message_text = tk.Text(self.message_board_frame, height=10, width=50, state=tk.DISABLED)
+        
+        # helper functions for message area
         def append_line(text_str):
             self.message_text.config(state=tk.NORMAL)
             self.message_text.insert(tk.END, f"{text_str}\n")
@@ -213,6 +235,7 @@ class _GuiWidgets:
             self.message_text.config(state=tk.DISABLED)
         self.message_text.append_line = append_line
         self.message_text.clear = clear
+
         self.message_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.message_scrollbar = ttk.Scrollbar(self.message_board_frame, orient="vertical", command=self.message_text.yview)
         self.message_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -229,12 +252,25 @@ class _GuiWidgets:
         self.send_button.pack(side=tk.RIGHT)
         self.send_button.config(state=tk.DISABLED)
 
-        # History search
+        # Search bar for history
         self.search_frame = ttk.Frame(self.bottom_frame)
         self.search_frame.grid(row=2, column=0, padx=5, pady=(4,0), sticky=tk.W+tk.E)
         self.search_entry = ttk.Entry(self.search_frame)
         self.search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.search_entry.insert(0, "Search history...")
+        self.search_entry.configure(foreground="gray")
+
+        def _on_search_focus_in(event):
+            if self.search_entry.get() == "Search history...":
+                self.search_entry.delete(0, tk.END)
+
+        def _on_search_focus_out(event):
+            if not self.search_entry.get().strip():
+                self.search_entry.insert(0, "Search history...")
+
+        self.search_entry.bind("<FocusIn>", _on_search_focus_in)
+        self.search_entry.bind("<FocusOut>", _on_search_focus_out)
+
         self.search_button = ttk.Button(self.search_frame, text="Search", command=lambda: self.app._search_history())
         self.search_button.pack(side=tk.RIGHT)
         self.search_button.config(state=tk.DISABLED)
@@ -246,9 +282,13 @@ class _GuiWidgets:
         self.online_users_label_frame = ttk.Frame(self.online_users_frame)
         self.online_users_label_frame.pack(anchor=tk.W, fill=tk.X, pady=(0,5))
         ttk.Label(self.online_users_label_frame, text="Online users:", anchor="w").grid(row=0, column=0, padx=(0, 10), sticky=tk.W)
+        
+        # Refresh button
         self.online_users_button_refresh = ttk.Button(self.online_users_label_frame, text="\u21BB", width=4, command=self.app._list_users)
         self.online_users_button_refresh.grid(row=0, column=1, sticky=tk.E)
         self.online_users_button_refresh.config(state=tk.DISABLED)
+        
+        # Collapse and expand button: toggles whether user groups are expanded
         def collapse_cmd():
             self.online_users_button_collapse.state = not self.online_users_button_collapse.state
             for iid in self.online_users_tree.get_children():
@@ -259,9 +299,12 @@ class _GuiWidgets:
         self.online_users_button_collapse.config(state=tk.DISABLED)
         self.online_users_label_frame.columnconfigure(0, weight=1)
 
+        # Treeview list showing users
         self.online_users_list_frame = ttk.Frame(self.online_users_frame)
         self.online_users_list_frame.pack(fill=tk.BOTH, expand=True)
         self.online_users_tree = ttk.Treeview(self.online_users_list_frame, columns=(), show='tree', selectmode='browse')
+        
+        # Add user entry to the tree
         def add_user(user, group, name, last_name):
             users = list(self.online_users_tree.get_children())
             for existing_user in users:
@@ -281,17 +324,25 @@ class _GuiWidgets:
                 self.online_users_tree.insert(user, 'end', text=fullname)
             self.online_users_tree.item(user, open=self.online_users_button_collapse.state)
             return True
+        
+        # Remove user from list
         def delete_user(user):
             if user not in self.online_users_tree.get_children():
                 logging.exception(f"user {user} doesn't exist in the list!")
                 return False
             self.online_users_tree.delete(user)
             return True
+        
+        
         self.online_users_tree.add_user = add_user
         self.online_users_tree.delete_user = delete_user
+        
+        # Tree configuration
         self.online_users_tree.heading('#0', text='User')
         self.online_users_tree.column('#0', width=200)
         self.online_users_tree.selection_prev = None
+        
+        # Click behavior
         def on_select(event):
             selected_item = self.online_users_tree.selection()
             if selected_item:
@@ -310,6 +361,8 @@ class _GuiWidgets:
             else:
                 self.online_users_tree.selection_prev = None
         self.online_users_tree.bind('<<TreeviewSelect>>', on_select)
+        
+        # Pack list and scrollbar
         self.online_users_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.online_users_scrollbar = ttk.Scrollbar(self.online_users_list_frame, orient="vertical", command=self.online_users_tree.yview)
         self.online_users_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)

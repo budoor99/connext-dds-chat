@@ -1,7 +1,9 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <dds>
   <qos_library name="PSQos">
+    <!-- QoS library used by the persistence service -->
     <qos_profile name="PSDefault">
+      <!-- Ensure messages are stored reliably and completely -->
       <datawriter_qos>
         <reliability><kind>RELIABLE_RELIABILITY_QOS</kind></reliability>
         <history><kind>KEEP_ALL_HISTORY_QOS</kind></history>
@@ -13,7 +15,9 @@
     </qos_profile>
   </qos_library>
 
+  <!-- Main persistence service definition -->
   <persistence_service name="ChatPS">
+    <!-- Where to store persistent data -->
     <persistent_storage>
       <filesystem>
         <directory>persistence\data</directory>
@@ -21,6 +25,7 @@
       </filesystem>
     </persistent_storage>
 
+    <!-- The service joins the same DDS domain as the chat app -->
     <participant name="PSParticipant">
       <domain_id>0</domain_id>
 
